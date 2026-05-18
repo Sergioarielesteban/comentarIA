@@ -68,6 +68,9 @@ export const copy = {
     savingCloud: "Guardando en la nube…",
     lockWarning:
       "Al seleccionar un restaurante, quedará vinculado a tu cuenta. Para cambiarlo más adelante, deberás contactar con soporte.",
+    previewEyebrow: "Tu local",
+    confirmLink: "Vincular este restaurante →",
+    backToList: "Ver otros resultados",
   },
   insights: {
     title: "Resumen semanal",
@@ -123,6 +126,20 @@ export const copy = {
       "El análisis ya está actualizado con las reseñas actuales.",
     limitReached:
       "Has alcanzado el límite diario. Vuelve mañana o mejora tu plan.",
+    sectionAnalysis: "Análisis",
+    sectionAccount: "Cuenta",
+    sectionRestaurant: "Restaurante",
+    accountEmail: "Correo",
+    subscription: "Suscripción",
+    subscriptionSoon: "Próximamente",
+    restaurantLocked: "Restaurante bloqueado",
+    oneRestaurantPolicy:
+      "Cada cuenta queda vinculada a un único restaurante.",
+    coverUploadCta: "Elegir foto o logo desde mi dispositivo",
+    coverUploading: "Subiendo imagen…",
+    coverUploadHint:
+      "JPG, PNG o WebP · máximo 4 MB. Se verá en tu resumen y en Ajustes.",
+    coverUploadSuccess: "Imagen actualizada correctamente.",
   },
   nav: {
     insights: "Resumen",

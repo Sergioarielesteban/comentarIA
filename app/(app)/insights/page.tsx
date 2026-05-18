@@ -6,12 +6,19 @@ import { useApp } from "@/components/providers/app-provider";
 import { useAnalysisRunner } from "@/hooks/use-analysis-runner";
 import { Spinner } from "@/components/ui/spinner";
 import { ErrorState } from "@/components/ui/error-state";
-import { Badge } from "@/components/ui/badge";
-import { Card } from "@/components/ui/card";
+import { HeroSummaryCard } from "@/components/premium/hero-summary-card";
+import {
+  OpportunityCard,
+  PremiumSectionTitle,
+  RestaurantStatus,
+  WeeklyActionCard,
+  positivePercentFromAnalysis,
+} from "@/components/premium/reputation-components";
 import {
   calcularScoreReputacion,
   etiquetaSalud,
 } from "@/lib/analysis/reputation-score";
+import { generateWeeklyActionPlan } from "@/lib/analysis/generate-weekly-action-plan";
 import { copy } from "@/lib/copy/es";
 
 export default function InsightsPage() {
@@ -27,12 +34,16 @@ export default function InsightsPage() {
 
   const score = place ? calcularScoreReputacion(place, analysis) : 0;
   const health = etiquetaSalud(score);
+  const weeklyActions = generateWeeklyActionPlan(analysis);
   const healthLabel =
     health === "healthy"
       ? copy.insights.healthy
       : health === "improve"
         ? copy.insights.improve
         : copy.insights.urgent;
+  const topNegative = analysis?.temasNegativos[0];
+  const topPositive = analysis?.temasPositivos[0];
+  const positivePercent = positivePercentFromAnalysis(analysis);
 
   return (
     <PageShell>
@@ -41,73 +52,64 @@ export default function InsightsPage() {
       ) : error ? (
         <ErrorState message={error} onRetry={() => run(true)} />
       ) : analysis ? (
-        <div className="space-y-5">
-          <Card>
-            <p className="text-xs uppercase tracking-wide text-ink-soft">
-              {copy.insights.health}
-            </p>
-            <p className="mt-1 font-display text-4xl font-semibold text-ink">
-              {score}
-              <span className="text-lg text-ink-soft">/100</span>
-            </p>
-            <Badge
-              tone={
-                health === "healthy"
-                  ? "success"
-                  : health === "improve"
-                    ? "warning"
-                    : "danger"
+        <div className="space-y-12">
+          <HeroSummaryCard
+            reviewsTotal={place?.total ?? 0}
+            restaurantName={place?.nombre}
+            coverImageUrl={place?.cover_image_url}
+            coverImageSource={place?.cover_image_source}
+          />
+
+          <section id="plan-semanal" className="space-y-5">
+            <PremiumSectionTitle
+              eyebrow="Plan operativo"
+              title="Qué hacer esta semana"
+              body="Acciones priorizadas para sala, carta y experiencia. Cada una nace de patrones reales en las reseñas."
+            />
+            <div className="space-y-4">
+              {weeklyActions.map((action, index) => (
+                <WeeklyActionCard key={action.id} action={action} index={index} />
+              ))}
+            </div>
+          </section>
+
+          <section className="grid gap-4 md:grid-cols-2">
+            <OpportunityCard
+              kind="Alerta prioritaria"
+              title={topNegative?.tema || "Señal sensible en la experiencia"}
+              body={
+                topNegative
+                  ? `${topNegative.porQue} La acción recomendada es: ${topNegative.accion}`
+                  : "No hay una fricción dominante esta semana. Mantén la escucha activa en sala."
               }
+              tone="terracotta"
             >
-              {healthLabel}
-            </Badge>
-          </Card>
-
-          <section>
-            <h2 className="mb-2 font-display text-lg text-olive">
-              {copy.insights.strengths}
-            </h2>
-            <div className="space-y-2">
-              {analysis.temasPositivos.map((t) => (
-                <Card key={t.tema}>
-                  <div className="flex items-start justify-between gap-2">
-                    <p className="font-medium text-ink">{t.tema}</p>
-                    <Badge tone="success">{t.menciones}×</Badge>
-                  </div>
-                  <p className="mt-2 text-sm italic text-ink-soft">
-                    “{t.ejemplo || copy.insights.emptyReview}”
-                  </p>
-                  <p className="mt-2 text-xs text-ink-soft">
-                    <strong>Qué pasa:</strong> {t.porQue}
-                  </p>
-                  <p className="mt-1 text-xs text-terracotta">
-                    <strong>Acción:</strong> {t.accion}
-                  </p>
-                </Card>
-              ))}
-            </div>
+              <p className="font-display text-2xl text-ink">
+                {topNegative ? `${topNegative.menciones} menciones` : "Sin foco crítico"}
+              </p>
+            </OpportunityCard>
+            <OpportunityCard
+              kind="Oportunidad detectada"
+              title={topPositive?.tema || "Fortaleza para amplificar"}
+              body={
+                topPositive
+                  ? `${topPositive.porQue} Puede convertirse en una palanca comercial esta semana.`
+                  : "Cuando aparezcan más señales positivas, aquí verás qué merece más visibilidad."
+              }
+              tone="olive"
+            >
+              <p className="font-display text-2xl text-ink">
+                {topPositive ? `${topPositive.menciones} menciones favorables` : "En observación"}
+              </p>
+            </OpportunityCard>
           </section>
 
-          <section>
-            <h2 className="mb-2 font-display text-lg text-terracotta">
-              {copy.insights.weaknesses}
-            </h2>
-            <div className="space-y-2">
-              {analysis.temasNegativos.map((t) => (
-                <Card key={t.tema}>
-                  <div className="flex items-start justify-between gap-2">
-                    <p className="font-medium text-ink">{t.tema}</p>
-                    <Badge tone="danger">{t.impacto}</Badge>
-                  </div>
-                  <p className="mt-2 text-sm italic text-ink-soft">
-                    “{t.ejemplo || copy.insights.emptyReview}”
-                  </p>
-                  <p className="mt-2 text-xs text-ink-soft">{t.porQue}</p>
-                  <p className="mt-1 text-xs text-terracotta">{t.accion}</p>
-                </Card>
-              ))}
-            </div>
-          </section>
+          <RestaurantStatus
+            place={place}
+            score={score}
+            healthLabel={healthLabel}
+            positivePercent={positivePercent}
+          />
         </div>
       ) : (
         <Spinner label={copy.insights.analyzing} />

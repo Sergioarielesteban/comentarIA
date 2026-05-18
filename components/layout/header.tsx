@@ -2,6 +2,8 @@
 
 import Link from "next/link";
 import { useApp } from "@/components/providers/app-provider";
+import { RestaurantAvatar } from "@/components/restaurant/restaurant-avatar";
+import { ComentarIALogo } from "@/components/brand/comentaria-logo";
 
 export function AppHeader() {
   const { place } = useApp();
@@ -9,21 +11,30 @@ export function AppHeader() {
   return (
     <header className="sticky top-0 z-40 border-b border-border bg-cream/86 px-4 py-3 backdrop-blur-xl sm:px-6">
       <div className="mx-auto flex max-w-6xl items-center justify-between gap-4">
-        <Link href="/insights" className="min-w-0">
-          <p className="font-display text-[2rem] font-semibold leading-none tracking-normal text-ink">
-            Comentar<span className="text-terracotta">IA</span>
-          </p>
-          <div className="mt-1 flex min-w-0 items-center gap-2 text-xs text-ink-soft">
-            <span className="truncate">
-              {place?.nombre ?? "Sin restaurante vinculado"}
-            </span>
-            <span
-              className={`h-1.5 w-1.5 shrink-0 rounded-full ${place ? "bg-olive" : "bg-terracotta"}`}
-              title={place ? "Restaurante vinculado" : "Completa el onboarding"}
+        <Link href="/insights" className="flex min-w-0 items-center gap-3">
+          {place ? (
+            <RestaurantAvatar
+              src={place.cover_image_url}
+              name={place.nombre}
+              size="md"
             />
-            <span className="hidden shrink-0 sm:inline">
-              {place ? "Restaurante conectado" : "Pendiente de vincular"}
-            </span>
+          ) : null}
+          <div className="min-w-0">
+            <ComentarIALogo size="md" />
+            <div className="mt-1 flex min-w-0 items-center gap-2 text-xs text-ink-soft">
+              <span className="truncate">
+                {place?.nombre ?? "Sin restaurante vinculado"}
+              </span>
+              <span
+                className={`h-1.5 w-1.5 shrink-0 rounded-full ${place ? "bg-olive" : "bg-terracotta"}`}
+                title={
+                  place ? "Restaurante vinculado" : "Completa el onboarding"
+                }
+              />
+              <span className="hidden shrink-0 sm:inline">
+                {place ? "Tu panel" : "Pendiente de vincular"}
+              </span>
+            </div>
           </div>
         </Link>
         <div className="flex items-center gap-2">

@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { useApp } from "@/components/providers/app-provider";
+import { RestaurantCover } from "@/components/restaurant/restaurant-cover";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -11,7 +12,7 @@ import { ErrorState } from "@/components/ui/error-state";
 import { copy } from "@/lib/copy/es";
 import type { PlaceSearchResult } from "@/lib/types";
 
-type Step = "intro" | "search" | "select" | "loading";
+type Step = "intro" | "search" | "select" | "preview" | "loading";
 
 export function OnboardingFlow() {
   const router = useRouter();
@@ -20,6 +21,7 @@ export function OnboardingFlow() {
   const [nombre, setNombre] = useState("");
   const [ciudad, setCiudad] = useState("");
   const [results, setResults] = useState<PlaceSearchResult[]>([]);
+  const [preview, setPreview] = useState<PlaceSearchResult | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [status, setStatus] = useState<string>(
     copy.onboarding.loadingDiagnosis,
@@ -34,13 +36,21 @@ export function OnboardingFlow() {
     const data = await res.json();
     if (!res.ok) {
       setError(data?.error?.message || copy.errors.generic);
+      setStep("search");
       return;
     }
     setResults(data.results || []);
     setStep("select");
   }
 
-  async function selectPlace(place: PlaceSearchResult) {
+  function openPreview(place: PlaceSearchResult) {
+    setPreview(place);
+    setStep("preview");
+    setError(null);
+  }
+
+  async function confirmLink() {
+    if (!preview) return;
     setStep("loading");
     setStatus(copy.onboarding.loadingDiagnosis);
     setError(null);
@@ -49,15 +59,15 @@ export function OnboardingFlow() {
       method: "POST",
       headers: { "content-type": "application/json" },
       body: JSON.stringify({
-        place_id: place.place_id,
-        name: place.name,
-        address: place.formatted_address,
+        place_id: preview.place_id,
+        name: preview.name,
+        address: preview.formatted_address,
       }),
     });
     const data = await res.json();
     if (!res.ok) {
       setError(data?.error?.message || copy.errors.generic);
-      setStep("select");
+      setStep("preview");
       return;
     }
 
@@ -90,6 +100,55 @@ export function OnboardingFlow() {
 
   if (step === "loading") {
     return <Spinner label={status} />;
+  }
+
+  if (step === "preview" && preview) {
+    return (
+      <div className="space-y-5">
+        <button
+          type="button"
+          onClick={() => setStep("select")}
+          className="text-sm text-ink-soft hover:text-ink"
+        >
+          ← {copy.onboarding.backToList}
+        </button>
+        <section className="relative min-h-[220px] overflow-hidden rounded-[28px]">
+          <RestaurantCover
+            src={preview.cover_image_url}
+            alt={preview.name}
+            layout="banner"
+            priority
+          />
+          <div className="absolute inset-0 bg-gradient-to-t from-[#2A211B]/90 via-[#2A211B]/40 to-transparent" />
+          <div className="relative z-10 flex min-h-[220px] flex-col justify-end p-6">
+            <p className="font-mono text-[10px] uppercase tracking-[0.22em] text-white/70">
+              {copy.onboarding.previewEyebrow}
+            </p>
+            <h2 className="mt-2 font-display text-3xl font-semibold text-white">
+              {preview.name}
+            </h2>
+            <p className="mt-1 text-sm text-white/75">
+              {preview.formatted_address}
+            </p>
+            {preview.rating ? (
+              <p className="mt-2 text-sm text-white/85">
+                ★ {preview.rating} ·{" "}
+                {preview.user_ratings_total?.toLocaleString("es")} reseñas
+              </p>
+            ) : null}
+          </div>
+        </section>
+        <p className="text-xs leading-5 text-ink-soft">
+          {copy.onboarding.lockWarning}
+        </p>
+        <Button fullWidth onClick={confirmLink}>
+          {copy.onboarding.confirmLink}
+        </Button>
+        {error ? (
+          <ErrorState message={error} onRetry={() => setError(null)} />
+        ) : null}
+      </div>
+    );
   }
 
   return (
@@ -135,20 +194,31 @@ export function OnboardingFlow() {
               <button
                 key={p.place_id}
                 type="button"
-                onClick={() => selectPlace(p)}
+                onClick={() => openPreview(p)}
                 className="w-full text-left"
               >
-                <Card className="transition hover:border-terracotta/40">
-                  <p className="font-medium text-ink">{p.name}</p>
-                  <p className="mt-1 text-xs text-ink-soft">
-                    {p.formatted_address}
-                  </p>
-                  {p.rating ? (
-                    <p className="mt-1 text-xs text-olive">
-                      ★ {p.rating} ·{" "}
-                      {p.user_ratings_total?.toLocaleString("es")} reseñas
-                    </p>
-                  ) : null}
+                <Card className="overflow-hidden p-0 transition hover:border-terracotta/40">
+                  <div className="flex gap-0 sm:gap-4">
+                    <div className="relative hidden h-24 w-28 shrink-0 sm:block">
+                      <RestaurantCover
+                        src={p.cover_image_url}
+                        alt={p.name}
+                        layout="fill"
+                      />
+                    </div>
+                    <div className="flex-1 p-4">
+                      <p className="font-medium text-ink">{p.name}</p>
+                      <p className="mt-1 text-xs text-ink-soft">
+                        {p.formatted_address}
+                      </p>
+                      {p.rating ? (
+                        <p className="mt-1 text-xs text-olive">
+                          ★ {p.rating} ·{" "}
+                          {p.user_ratings_total?.toLocaleString("es")} reseñas
+                        </p>
+                      ) : null}
+                    </div>
+                  </div>
                 </Card>
               </button>
             ))}

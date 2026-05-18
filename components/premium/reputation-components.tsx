@@ -1,8 +1,9 @@
 "use client";
 
-import Image from "next/image";
 import type { ReactNode } from "react";
 import type { ActionUrgency, WeeklyAction } from "@/lib/analysis/generate-weekly-action-plan";
+
+export { HeroSummaryCard } from "@/components/premium/hero-summary-card";
 import type { Analysis, EspejoItem, Place } from "@/lib/types";
 
 type Tone = "terracotta" | "mustard" | "olive";
@@ -64,53 +65,6 @@ export function PremiumSectionTitle({
   );
 }
 
-export function HeroSummaryCard({
-  reviewsTotal,
-  restaurantName,
-}: {
-  reviewsTotal: number;
-  restaurantName?: string;
-}) {
-  return (
-    <section className="fade-in overflow-hidden rounded-[28px] bg-[#211814] text-white">
-      <div className="grid min-h-[430px] md:grid-cols-[1.05fr_.95fr]">
-        <div className="relative z-10 flex flex-col justify-between gap-10 p-7 sm:p-10">
-          <div>
-            <p className="font-mono text-[10px] uppercase tracking-[0.26em] text-white/62">
-              Resumen semanal
-            </p>
-            <h1 className="mt-5 max-w-xl font-display text-5xl font-semibold leading-[.9] tracking-normal text-white sm:text-7xl">
-              Lo más importante de tus clientes
-            </h1>
-            <p className="mt-5 max-w-md text-base leading-7 text-white/72">
-              Analizamos {reviewsTotal.toLocaleString("es")} reseñas y detectamos patrones que te ayudan a tomar mejores decisiones esta semana.
-            </p>
-          </div>
-          <div className="flex flex-col gap-4 sm:flex-row sm:items-center">
-            <a
-              href="#resumen-completo"
-              className="inline-flex w-fit items-center justify-center rounded-full bg-terracotta px-5 py-3 text-sm font-semibold text-white transition hover:bg-terracotta-dark"
-            >
-              Ver resumen completo
-            </a>
-            <p className="text-sm text-white/54">{restaurantName || "Restaurante conectado"}</p>
-          </div>
-        </div>
-        <div className="relative min-h-[260px] md:min-h-full">
-          <Image
-            src="/restaurant-hero.png"
-            alt=""
-            fill
-            priority
-            sizes="(min-width: 768px) 45vw, 100vw"
-            className="object-cover"
-          />
-          <div className="absolute inset-0 bg-[linear-gradient(90deg,rgba(33,24,20,.82),rgba(33,24,20,.12)_45%,rgba(33,24,20,.2)),linear-gradient(0deg,rgba(196,83,31,.22),rgba(247,243,238,.04))]" />
-        </div>
-      </div>
-    </section>
-  );
-}
 
 export function WeeklyActionCard({
   action,

@@ -17,7 +17,7 @@ export const maxDuration = 60;
  * Refresca las reseñas del ÚNICO restaurante del usuario.
  * Ignora cualquier query/place_id externo. Fuente de verdad: user_restaurants.
  */
-export async function POST(request: Request) {
+export async function POST() {
   try {
     const user = await getServerUser();
     const restaurant = await requireUserRestaurant(user.id);
@@ -32,14 +32,20 @@ export async function POST(request: Request) {
     await incrementUsage(user.id, "reviews_refresh");
     await saveReviews(restaurant.id, result.reviews);
 
-    // Actualiza solo rating/total_reviews — place_id y name siguen congelados por trigger.
     const supabase = await getServerSupabase();
+    const updatePayload: Record<string, unknown> = {
+      rating: result.place.rating ?? restaurant.rating,
+      total_reviews: result.place.total ?? restaurant.total_reviews,
+    };
+    // Rellenar portada solo si aún no existía (usuarios migrados sin imagen)
+    if (!restaurant.cover_image_url && result.cover_image_url) {
+      updatePayload.cover_image_url = result.cover_image_url;
+      updatePayload.cover_image_source = result.cover_image_source;
+      updatePayload.cover_image_updated_at = new Date().toISOString();
+    }
     await supabase
       .from("user_restaurants")
-      .update({
-        rating: result.place.rating ?? restaurant.rating,
-        total_reviews: result.place.total ?? restaurant.total_reviews,
-      })
+      .update(updatePayload)
       .eq("id", restaurant.id);
 
     return Response.json({
@@ -50,6 +56,10 @@ export async function POST(request: Request) {
         direccion: restaurant.address,
         rating: result.place.rating ?? restaurant.rating,
         total: result.place.total ?? restaurant.total_reviews,
+        cover_image_url:
+          restaurant.cover_image_url ?? result.cover_image_url ?? null,
+        cover_image_source:
+          restaurant.cover_image_source ?? result.cover_image_source ?? null,
       },
     });
   } catch (err) {

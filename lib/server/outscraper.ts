@@ -1,4 +1,6 @@
 import "server-only";
+import { extractRestaurantImage } from "@/lib/restaurant/extract-image";
+import type { CoverImageSource } from "@/lib/restaurant/cover-image";
 import type { Place, PlaceSearchResult, Resena } from "@/lib/types";
 import { ApiError } from "@/lib/server/errors";
 
@@ -14,6 +16,13 @@ function getApiKey(): string {
     throw new ApiError(503, "El servicio de reseñas no está configurado.");
   }
   return key;
+}
+
+function coverFromRaw(
+  raw: Record<string, unknown>,
+): { url: string | null; source: CoverImageSource } {
+  const url = extractRestaurantImage(raw);
+  return { url, source: url ? "outscraper" : "fallback" };
 }
 
 export async function searchPlaces(
@@ -45,18 +54,24 @@ export async function searchPlaces(
     unknown
   >[];
 
-  return places.map((p) => ({
-    place_id: String(p.place_id ?? ""),
-    name: String(p.name ?? ""),
-    formatted_address: String(p.full_address ?? p.address ?? ""),
-    rating: p.rating as number | undefined,
-    user_ratings_total: p.reviews as number | undefined,
-  }));
+  return places.map((p) => {
+    const { url } = coverFromRaw(p);
+    return {
+      place_id: String(p.place_id ?? ""),
+      name: String(p.name ?? ""),
+      formatted_address: String(p.full_address ?? p.address ?? ""),
+      rating: p.rating as number | undefined,
+      user_ratings_total: p.reviews as number | undefined,
+      cover_image_url: url,
+    };
+  });
 }
 
 export interface ReviewsResult {
   place: Place;
   reviews: Resena[];
+  cover_image_url: string | null;
+  cover_image_source: CoverImageSource;
 }
 
 export async function fetchReviews(query: string): Promise<ReviewsResult> {
@@ -91,13 +106,22 @@ export async function fetchReviews(query: string): Promise<ReviewsResult> {
     tiempo: rev.review_timestamp as number | string | undefined,
   }));
 
+  const { url: coverUrl, source: coverSource } = coverFromRaw(lugar);
+
   const place: Place = {
     place_id: String(lugar.place_id ?? ""),
     nombre: String(lugar.name ?? ""),
     direccion: String(lugar.full_address ?? ""),
     rating: lugar.rating as number,
     total: lugar.reviews as number,
+    cover_image_url: coverUrl,
+    cover_image_source: coverSource,
   };
 
-  return { place, reviews };
+  return {
+    place,
+    reviews,
+    cover_image_url: coverUrl,
+    cover_image_source: coverSource,
+  };
 }

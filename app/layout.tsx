@@ -1,5 +1,6 @@
 import type { Metadata, Viewport } from "next";
 import { Cormorant_Garamond, DM_Mono, Outfit } from "next/font/google";
+import { UpdateAvailableBanner } from "@/components/update/update-available-banner";
 import "./globals.css";
 
 const cormorant = Cormorant_Garamond({
@@ -47,7 +48,10 @@ export default function RootLayout({
       lang="es"
       className={`${cormorant.variable} ${outfit.variable} ${dmMono.variable} h-full`}
     >
-      <body className="min-h-full antialiased">{children}</body>
+      <body className="min-h-full antialiased">
+        {children}
+        <UpdateAvailableBanner />
+      </body>
     </html>
   );
 }

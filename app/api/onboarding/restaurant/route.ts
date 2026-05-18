@@ -44,6 +44,10 @@ export async function POST(request: Request) {
     }
 
     const supabase = await getServerSupabase();
+    const coverUrl = result.cover_image_url;
+    const coverSource = result.cover_image_source;
+    const now = new Date().toISOString();
+
     const { data: inserted, error: insertError } = await supabase
       .from("user_restaurants")
       .insert({
@@ -53,6 +57,9 @@ export async function POST(request: Request) {
         address: result.place.direccion || address || null,
         rating: result.place.rating ?? null,
         total_reviews: result.place.total ?? null,
+        cover_image_url: coverUrl,
+        cover_image_source: coverSource,
+        cover_image_updated_at: coverUrl ? now : null,
       })
       .select()
       .single();

@@ -9,6 +9,9 @@ export interface UserRestaurantRow {
   address: string | null;
   rating: number | null;
   total_reviews: number | null;
+  cover_image_url: string | null;
+  cover_image_source: string | null;
+  cover_image_updated_at: string | null;
   locked_at: string;
   created_at: string;
   updated_at: string;
@@ -64,6 +67,8 @@ export function rowToPlace(row: UserRestaurantRow): Place {
     direccion: row.address ?? "",
     rating: row.rating,
     total: row.total_reviews,
+    cover_image_url: row.cover_image_url ?? null,
+    cover_image_source: row.cover_image_source ?? null,
   };
 }
 

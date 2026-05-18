@@ -16,6 +16,8 @@ export interface Place {
   direccion?: string;
   rating?: number | null;
   total?: number | null;
+  cover_image_url?: string | null;
+  cover_image_source?: string | null;
 }
 
 export interface TemaPositivo {
@@ -84,4 +86,5 @@ export interface PlaceSearchResult {
   formatted_address: string;
   rating?: number;
   user_ratings_total?: number;
+  cover_image_url?: string | null;
 }

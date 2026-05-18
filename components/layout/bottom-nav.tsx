@@ -1,7 +1,8 @@
 "use client";
 
 import Link from "next/link";
-import { usePathname } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
+import { useEffect, useState } from "react";
 import { copy } from "@/lib/copy/es";
 
 const items = [
@@ -14,34 +15,83 @@ const items = [
 
 export function BottomNav() {
   const pathname = usePathname();
+  const router = useRouter();
+  const [pendingHref, setPendingHref] = useState<string | null>(null);
+  const [pressedHref, setPressedHref] = useState<string | null>(null);
+
+  useEffect(() => {
+    const id = window.setTimeout(() => {
+      setPendingHref(null);
+      setPressedHref(null);
+    }, 0);
+    return () => window.clearTimeout(id);
+  }, [pathname]);
 
   return (
-    <nav className="fixed bottom-0 left-0 right-0 z-40 border-t border-border bg-cream/88 backdrop-blur-xl">
-      <div className="mx-auto flex max-w-lg justify-around px-2 py-2 safe-bottom">
-        {items.map((item) => {
-          const active = pathname === item.href;
-          return (
-            <Link
-              key={item.href}
-              href={item.href}
-              className={[
-                "flex min-w-[58px] flex-col items-center gap-1 rounded-full px-2 py-1.5 text-[10px] font-medium transition duration-200",
-                active ? "text-terracotta" : "text-ink-soft hover:text-ink",
-              ].join(" ")}
-            >
-              <span
+    <nav className="fixed inset-x-0 bottom-0 z-40 px-3 pb-3 safe-bottom">
+      <div className="mx-auto max-w-lg rounded-[28px] border border-border bg-card/86 p-1.5 shadow-[0_18px_48px_rgba(28,26,24,.12)] backdrop-blur-xl">
+        <div className="grid grid-cols-5 gap-1">
+          {items.map((item) => {
+            const active = pathname === item.href;
+            const visuallyActive = active || pendingHref === item.href;
+            const pressed = pressedHref === item.href;
+            return (
+              <Link
+                key={item.href}
+                href={item.href}
+                prefetch
+                aria-current={active ? "page" : undefined}
+                onMouseEnter={() => router.prefetch(item.href)}
+                onTouchStart={() => router.prefetch(item.href)}
+                onPointerDown={() => {
+                  router.prefetch(item.href);
+                  setPressedHref(item.href);
+                }}
+                onPointerUp={() => setPressedHref(null)}
+                onPointerCancel={() => setPressedHref(null)}
+                onClick={() => {
+                  if (!active) setPendingHref(item.href);
+                }}
                 className={[
-                  "grid h-6 w-6 place-items-center rounded-full transition",
-                  active ? "bg-terracotta/10" : "",
+                  "group relative flex min-h-[58px] min-w-0 flex-col items-center justify-center gap-1 overflow-hidden rounded-[22px] px-1.5 py-2 text-[10px] font-semibold transition duration-200 ease-out",
+                  "focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-terracotta",
+                  visuallyActive
+                    ? "bg-cream text-terracotta shadow-[0_8px_22px_rgba(196,83,31,.12)]"
+                    : "text-ink-soft hover:bg-cream/70 hover:text-ink",
+                  pressed ? "scale-[.96]" : "scale-100",
                 ].join(" ")}
-                aria-hidden
               >
-                <NavIcon name={item.icon} />
-              </span>
-              {item.label}
-            </Link>
-          );
-        })}
+                <span
+                  className={[
+                    "absolute left-1/2 top-1.5 h-1 w-7 -translate-x-1/2 rounded-full bg-terracotta transition duration-200",
+                    visuallyActive ? "opacity-100" : "opacity-0",
+                  ].join(" ")}
+                  aria-hidden
+                />
+                <span
+                  className={[
+                    "relative grid h-8 w-8 place-items-center rounded-full transition duration-200",
+                    visuallyActive
+                      ? "bg-terracotta/10 text-terracotta"
+                      : "text-ink-soft group-hover:bg-cream-muted/70 group-hover:text-ink",
+                  ].join(" ")}
+                  aria-hidden
+                >
+                  <NavIcon name={item.icon} />
+                </span>
+                <span className="relative max-w-full truncate leading-none">
+                  {item.label}
+                </span>
+                {pendingHref === item.href ? (
+                  <span
+                    className="absolute bottom-1.5 h-1 w-1 rounded-full bg-terracotta/70"
+                    aria-hidden
+                  />
+                ) : null}
+              </Link>
+            );
+          })}
+        </div>
       </div>
     </nav>
   );
@@ -49,7 +99,7 @@ export function BottomNav() {
 
 function NavIcon({ name }: { name: (typeof items)[number]["icon"] }) {
   const common = {
-    className: "h-4 w-4",
+    className: "h-[18px] w-[18px]",
     fill: "none",
     stroke: "currentColor",
     strokeWidth: "1.8",
