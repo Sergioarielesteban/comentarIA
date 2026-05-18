@@ -1,154 +1,92 @@
 import type { Analysis, Place, Resena } from "@/lib/types";
 import { createClient } from "@/lib/supabase/client";
 
-export async function guardarRestaurante(userId: string, place: Place) {
-  const supabase = createClient();
-  const payload = {
-    user_id: userId,
-    place_id: place.place_id || null,
-    nombre: place.nombre,
-    direccion: place.direccion || "",
-    rating: place.rating ?? null,
-    total_resenas: place.total ?? null,
-    updated_at: new Date().toISOString(),
-  };
-
-  const { data: existing } = await supabase
-    .from("restaurantes")
-    .select("id")
-    .eq("user_id", userId)
-    .limit(1)
-    .maybeSingle();
-
-  if (existing) {
-    const { data, error } = await supabase
-      .from("restaurantes")
-      .update(payload)
-      .eq("id", existing.id)
-      .select()
-      .single();
-    if (error) throw error;
-    return data;
-  }
-
-  const { data, error } = await supabase
-    .from("restaurantes")
-    .insert(payload)
-    .select()
-    .single();
-  if (error) throw error;
-  return data;
+export interface UserRestaurantRow {
+  id: string;
+  user_id: string;
+  place_id: string;
+  name: string;
+  address: string | null;
+  rating: number | null;
+  total_reviews: number | null;
+  locked_at: string;
+  created_at: string;
+  updated_at: string;
 }
 
-export async function obtenerRestaurante(userId: string) {
+export async function obtenerUserRestaurant(
+  userId: string,
+): Promise<UserRestaurantRow | null> {
   const supabase = createClient();
   const { data, error } = await supabase
-    .from("restaurantes")
+    .from("user_restaurants")
     .select("*")
     .eq("user_id", userId)
-    .order("updated_at", { ascending: false })
-    .limit(1)
     .maybeSingle();
-
   if (error) throw error;
-  return data;
+  return (data as UserRestaurantRow | null) ?? null;
 }
 
-export async function guardarResenasCache(
-  restauranteId: string,
-  reviews: Resena[],
-) {
-  const supabase = createClient();
-  const { error } = await supabase.from("resenas_cache").upsert(
-    {
-      restaurante_id: restauranteId,
-      data: reviews,
-      fetched_at: new Date().toISOString(),
-    },
-    { onConflict: "restaurante_id" },
-  );
-  if (error) throw error;
-}
-
-export async function obtenerResenasCache(restauranteId: string) {
+export async function obtenerReviews(
+  userRestaurantId: string,
+): Promise<Resena[]> {
   const supabase = createClient();
   const { data, error } = await supabase
-    .from("resenas_cache")
-    .select("data, fetched_at")
-    .eq("restaurante_id", restauranteId)
+    .from("user_restaurant_reviews")
+    .select("data")
+    .eq("user_restaurant_id", userRestaurantId)
     .maybeSingle();
-
   if (error) throw error;
-  return data;
+  return ((data?.data as Resena[] | undefined) ?? []) as Resena[];
 }
 
-export async function guardarAnalisis(
+export async function obtenerAnalisisCacheado(
   userId: string,
-  restauranteId: string,
-  analysis: Analysis,
-  reviewsHash: string,
-) {
-  const supabase = createClient();
-  const payload = {
-    user_id: userId,
-    restaurante_id: restauranteId,
-    data: analysis,
-    reviews_hash: reviewsHash,
-    updated_at: new Date().toISOString(),
-  };
-
-  const { data: existing } = await supabase
-    .from("analisis")
-    .select("id")
-    .eq("restaurante_id", restauranteId)
-    .maybeSingle();
-
-  if (existing) {
-    const { data, error } = await supabase
-      .from("analisis")
-      .update(payload)
-      .eq("id", existing.id)
-      .select()
-      .single();
-    if (error) throw error;
-    return data;
-  }
-
-  const { data, error } = await supabase
-    .from("analisis")
-    .insert(payload)
-    .select()
-    .single();
-  if (error) throw error;
-  return data;
-}
-
-export async function obtenerAnalisis(restauranteId: string) {
+  placeId: string,
+): Promise<Analysis | null> {
   const supabase = createClient();
   const { data, error } = await supabase
-    .from("analisis")
-    .select("data, reviews_hash, created_at")
-    .eq("restaurante_id", restauranteId)
-    .order("created_at", { ascending: false })
+    .from("restaurant_analysis_cache")
+    .select("analysis_json, generated_at")
+    .eq("user_id", userId)
+    .eq("place_id", placeId)
+    .order("generated_at", { ascending: false })
     .limit(1)
     .maybeSingle();
-
   if (error) throw error;
-  return data;
+  return (data?.analysis_json as Analysis | undefined) ?? null;
 }
 
-export function rowToPlace(row: {
-  place_id: string | null;
-  nombre: string;
-  direccion: string | null;
-  rating: number | null;
-  total_resenas: number | null;
-}): Place {
+export function rowToPlace(row: UserRestaurantRow): Place {
   return {
     place_id: row.place_id,
-    nombre: row.nombre,
-    direccion: row.direccion || "",
+    nombre: row.name,
+    direccion: row.address ?? "",
     rating: row.rating,
-    total: row.total_resenas,
+    total: row.total_reviews,
   };
+}
+
+export interface DailyUsageRow {
+  chat_requests: number;
+  analysis_runs: number;
+  reviews_refreshes: number;
+  place_searches: number;
+}
+
+export async function obtenerUsoHoy(
+  userId: string,
+): Promise<DailyUsageRow | null> {
+  const supabase = createClient();
+  const today = new Date().toISOString().slice(0, 10);
+  const { data, error } = await supabase
+    .from("usage_daily")
+    .select(
+      "chat_requests, analysis_runs, reviews_refreshes, place_searches",
+    )
+    .eq("user_id", userId)
+    .eq("usage_date", today)
+    .maybeSingle();
+  if (error) return null;
+  return (data as DailyUsageRow | null) ?? null;
 }

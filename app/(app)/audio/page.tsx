@@ -3,8 +3,7 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { PageShell } from "@/components/layout/page-shell";
 import { useApp } from "@/components/providers/app-provider";
-import { Button } from "@/components/ui/button";
-import { Card } from "@/components/ui/card";
+import { BriefingCard, PremiumSectionTitle } from "@/components/premium/reputation-components";
 import { copy } from "@/lib/copy/es";
 import { placeholders } from "@/lib/placeholders";
 
@@ -37,32 +36,22 @@ export default function AudioPage() {
   useEffect(() => () => stop(), [stop]);
 
   return (
-    <PageShell title={copy.audio.title} subtitle={copy.audio.subtitle}>
-      <Card className="text-center">
-        <p className="text-4xl" aria-hidden>
-          🎧
-        </p>
-        {briefing ? (
-          <>
-            <p className="mt-4 text-sm leading-relaxed text-ink-soft">
-              {briefing.slice(0, 280)}
-              {briefing.length > 280 ? "…" : ""}
-            </p>
-            <Button
-              className="mt-6"
-              fullWidth
-              onClick={playing ? stop : play}
-            >
-              {playing ? copy.audio.pause : copy.audio.play}
-            </Button>
-          </>
-        ) : (
-          <p className="mt-4 text-sm text-ink-soft">{copy.audio.noBriefing}</p>
-        )}
-        <p className="mt-4 text-xs italic text-ink-soft">
+    <PageShell>
+      <div className="space-y-7">
+        <PremiumSectionTitle
+          eyebrow="Briefing"
+          title="El resumen que escucharías antes del servicio"
+          body={copy.audio.subtitle}
+        />
+        <BriefingCard
+          briefing={briefing}
+          playing={playing}
+          onToggle={playing ? stop : play}
+        />
+        <p className="text-center text-xs italic text-ink-soft">
           {placeholders.serverTts}
         </p>
-      </Card>
+      </div>
     </PageShell>
   );
 }

@@ -1,53 +1,54 @@
 "use client";
 
 import { useCallback, useState } from "react";
-import {
-  analyzeReviews,
-  clearAnalysisCache,
-  getCachedAnalysis,
-} from "@/lib/analysis/analyze-reviews";
-import { hashReviews } from "@/lib/analysis/hash-reviews";
-import { STORAGE_KEYS } from "@/lib/constants";
 import { useApp } from "@/components/providers/app-provider";
 import type { Analysis } from "@/lib/types";
 
+interface RunResult {
+  analysis: Analysis | null;
+  cached?: boolean;
+  limitReached?: boolean;
+  error?: string;
+}
+
 export function useAnalysisRunner() {
-  const { place, reviews, analysis, setAnalysis, persistAnalysis } = useApp();
+  const { setAnalysis } = useApp();
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   const run = useCallback(
-    async (force = false) => {
-      if (!place || !reviews.length) return null;
-
-      const hash = hashReviews(reviews);
-      if (!force) {
-        if (analysis) return analysis;
-        const cached = getCachedAnalysis();
-        const cachedHash = localStorage.getItem(STORAGE_KEYS.analysisHash);
-        if (cached && cachedHash === hash) {
-          setAnalysis(cached);
-          return cached;
-        }
-      }
-
+    async (force = false): Promise<RunResult> => {
       setLoading(true);
       setError(null);
       try {
-        if (force) clearAnalysisCache();
-        const result = await analyzeReviews(place, reviews, { force });
-        setAnalysis(result);
-        await persistAnalysis(result, hashReviews(reviews));
-        return result;
+        const res = await fetch("/api/analysis", {
+          method: "POST",
+          headers: { "content-type": "application/json" },
+          body: JSON.stringify({ force }),
+        });
+        const data = await res.json();
+
+        if (res.status === 429) {
+          return { analysis: null, limitReached: true };
+        }
+        if (!res.ok) {
+          const msg = data?.error?.message || "Error al analizar.";
+          setError(msg);
+          return { analysis: null, error: msg };
+        }
+
+        const analysis = (data?.analysis as Analysis | null) ?? null;
+        if (analysis) setAnalysis(analysis);
+        return { analysis, cached: Boolean(data?.cached) };
       } catch (e) {
-        const msg = e instanceof Error ? e.message : "Error al analizar";
+        const msg = e instanceof Error ? e.message : "Error al analizar.";
         setError(msg);
-        return null;
+        return { analysis: null, error: msg };
       } finally {
         setLoading(false);
       }
     },
-    [place, reviews, analysis, setAnalysis, persistAnalysis],
+    [setAnalysis],
   );
 
   return { run, loading, error };

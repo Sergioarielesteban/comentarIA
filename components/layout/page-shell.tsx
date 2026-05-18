@@ -1,18 +1,16 @@
-import { Header } from "@/components/layout/header";
+import { AppHeader } from "@/components/layout/header";
 
 export function PageShell({
-  title,
-  subtitle,
   children,
 }: {
-  title?: string;
-  subtitle?: string;
   children: React.ReactNode;
 }) {
   return (
     <>
-      <Header title={title} subtitle={subtitle} showBrand={!title} />
-      <main className="flex-1 overflow-y-auto px-4 py-5 pb-28">{children}</main>
+      <AppHeader />
+      <main className="mx-auto w-full max-w-6xl flex-1 px-4 py-6 pb-28 sm:px-6 sm:py-8">
+        {children}
+      </main>
     </>
   );
 }

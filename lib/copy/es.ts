@@ -14,7 +14,7 @@ export const copy = {
     ctaSecondary: "Iniciar sesión",
     features: [
       {
-        title: "Insights semanales",
+        title: "Resumen semanal",
         body: "Temas positivos y negativos con acciones concretas para esta semana.",
       },
       {
@@ -45,7 +45,9 @@ export const copy = {
         "Demasiados intentos de registro. Espera unos minutos o desactiva la confirmación por email en Supabase (modo desarrollo).",
       signupDisabled: "El registro está desactivado en este proyecto de Supabase.",
       connection:
-        "No se pudo conectar con Supabase. Revisa .env.local y reinicia el servidor.",
+        "No se pudo conectar con Supabase. En local: revisa .env.local. En Vercel: Settings → Environment Variables (NEXT_PUBLIC_SUPABASE_URL y NEXT_PUBLIC_SUPABASE_ANON_KEY) y vuelve a desplegar.",
+      missingEnv:
+        "Supabase no está configurado. Añade NEXT_PUBLIC_SUPABASE_URL y NEXT_PUBLIC_SUPABASE_ANON_KEY en Vercel (o en .env.local en local) y redeploy.",
       generic: "No se pudo completar la operación. Inténtalo de nuevo.",
     },
     confirmEmail:
@@ -64,9 +66,11 @@ export const copy = {
     cta: "Analiza mi restaurante →",
     loadingDiagnosis: "Preparando tu diagnóstico…",
     savingCloud: "Guardando en la nube…",
+    lockWarning:
+      "Al seleccionar un restaurante, quedará vinculado a tu cuenta. Para cambiarlo más adelante, deberás contactar con soporte.",
   },
   insights: {
-    title: "Insights semanales",
+    title: "Resumen semanal",
     health: "Salud reputacional",
     healthy: "Reputación saludable",
     improve: "Margen de mejora",
@@ -87,7 +91,7 @@ export const copy = {
     positive: "El dato positivo de esta semana",
   },
   audio: {
-    title: "Resumen en audio",
+    title: "Briefing ejecutivo",
     subtitle: "Tu briefing semanal en 3 minutos",
     play: "Escuchar briefing",
     pause: "Pausar",
@@ -96,7 +100,10 @@ export const copy = {
   chat: {
     title: "Consultor IA",
     placeholder: "Pregunta sobre tus reseñas…",
-    limitReached: "Has tenido una sesión muy productiva hoy. Vuelve mañana.",
+    limitReached:
+      "Has alcanzado el límite diario de consultas. Vuelve mañana o mejora tu plan.",
+    serverLimitNotice:
+      "Tus conversaciones se procesan con tu restaurante real y un límite diario controlado en servidor.",
     suggestions: [
       "¿Cuál es mi mayor punto débil esta semana?",
       "¿Qué dicen sobre mi carta?",
@@ -109,15 +116,19 @@ export const copy = {
     regenerate: "Regenerar análisis",
     pdf: "Descargar informe PDF",
     refreshReviews: "Actualizar reseñas",
-    changeRestaurant: "Cambiar restaurante",
     logout: "Cerrar sesión",
-    resetOnboarding: "Reiniciar onboarding",
+    lockedLine:
+      "Este restaurante está vinculado a tu cuenta. Para cambiarlo, contacta con soporte.",
+    analysisUpToDate:
+      "El análisis ya está actualizado con las reseñas actuales.",
+    limitReached:
+      "Has alcanzado el límite diario. Vuelve mañana o mejora tu plan.",
   },
   nav: {
-    insights: "Insights",
+    insights: "Resumen",
     espejo: "Espejo",
-    audio: "Audio",
-    chat: "Chat",
+    audio: "Briefing",
+    chat: "Consultor",
     settings: "Ajustes",
   },
   errors: {
@@ -125,5 +136,9 @@ export const copy = {
     noReviews: "No hay reseñas para analizar.",
     aiUnavailable: "El servicio de IA no está configurado.",
     outscraperUnavailable: "El servicio de reseñas no está configurado.",
+    alreadyLocked:
+      "Tu cuenta ya está vinculada a un restaurante. Para cambiarlo, contacta con soporte.",
+    limit:
+      "Has alcanzado el límite diario de consultas. Vuelve mañana o mejora tu plan.",
   },
 } as const;

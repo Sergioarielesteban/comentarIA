@@ -5,7 +5,7 @@ import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
 import { mapAuthError } from "@/lib/auth/map-auth-error";
-import { obtenerRestaurante } from "@/lib/supabase/queries";
+import { obtenerUserRestaurant } from "@/lib/supabase/queries";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { copy } from "@/lib/copy/es";
@@ -30,7 +30,7 @@ function LoginForm() {
     const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
     const key = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
     if (!url || !key) {
-      setError(copy.auth.errors.connection);
+      setError(copy.auth.errors.missingEnv);
       setLoading(false);
       return;
     }
@@ -78,7 +78,7 @@ function LoginForm() {
 
     let destination = "/onboarding";
     try {
-      const restaurante = await obtenerRestaurante(user.id);
+      const restaurante = await obtenerUserRestaurant(user.id);
       if (restaurante) destination = "/insights";
     } catch {
       // Sin tablas aún o error de red — igualmente ir a onboarding

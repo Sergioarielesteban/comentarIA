@@ -6,77 +6,67 @@ import Link from "next/link";
 import { PageShell } from "@/components/layout/page-shell";
 import { useApp } from "@/components/providers/app-provider";
 import { useAnalysisRunner } from "@/hooks/use-analysis-runner";
-import { clearAnalysisCache } from "@/lib/analysis/analyze-reviews";
 import { createClient } from "@/lib/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { copy } from "@/lib/copy/es";
-import { placeholders } from "@/lib/placeholders";
 
 export default function AjustesPage() {
   const router = useRouter();
-  const { place, clearLocalData, setReviews, persistRestaurant } = useApp();
+  const { place, clearLocalState, refresh } = useApp();
   const { run, loading } = useAnalysisRunner();
   const [refreshing, setRefreshing] = useState(false);
+  const [notice, setNotice] = useState<string | null>(null);
 
   async function refreshReviews() {
-    if (!place?.place_id && !place?.nombre) return;
     setRefreshing(true);
-    const q = place.place_id || `${place.nombre} ${place.direccion || ""}`;
-    const res = await fetch(`/api/reviews?query=${encodeURIComponent(q)}`);
+    setNotice(null);
+    const res = await fetch("/api/reviews", { method: "POST" });
     const data = await res.json();
     setRefreshing(false);
-    if (res.ok && data.resenas) {
-      await persistRestaurant(place, data.resenas);
-      clearAnalysisCache();
-      await run(true);
+    if (!res.ok) {
+      setNotice(data?.error?.message || copy.errors.generic);
+      return;
+    }
+    await refresh();
+    // tras refrescar reseñas, intentamos regenerar análisis (respetando caché/límite)
+    const result = await run(true);
+    if (result?.limitReached) {
+      setNotice(copy.chat.limitReached);
+    }
+  }
+
+  async function regenerate() {
+    setNotice(null);
+    const result = await run(true);
+    if (result?.limitReached) {
+      setNotice(copy.chat.limitReached);
+    } else if (result?.cached) {
+      setNotice(copy.settings.analysisUpToDate);
     }
   }
 
   async function logout() {
     const supabase = createClient();
     await supabase.auth.signOut();
-    clearLocalData();
+    clearLocalState();
     router.replace("/login");
     router.refresh();
   }
 
-  function resetOnboarding() {
-    clearLocalData();
-    clearAnalysisCache();
-    router.replace("/onboarding");
-    router.refresh();
-  }
-
-  const actions = [
-    {
-      label: copy.settings.regenerate,
-      onClick: () => run(true),
-      disabled: loading,
-    },
-    {
-      label: copy.settings.refreshReviews,
-      onClick: refreshReviews,
-      disabled: refreshing,
-    },
-    {
-      label: copy.settings.changeRestaurant,
-      onClick: resetOnboarding,
-    },
-    {
-      label: copy.settings.resetOnboarding,
-      onClick: resetOnboarding,
-      variant: "ghost" as const,
-    },
-    {
-      label: copy.settings.logout,
-      onClick: logout,
-      variant: "danger" as const,
-    },
-  ];
+  const showDevActions = process.env.NODE_ENV === "development";
 
   return (
-    <PageShell title={copy.settings.title} subtitle={place?.nombre}>
+    <PageShell>
+      <div className="mb-6">
+        <p className="font-mono text-[10px] uppercase tracking-[0.22em] text-terracotta">
+          {copy.settings.title}
+        </p>
+        <h1 className="mt-3 font-display text-5xl font-semibold leading-none text-ink">
+          Preferencias del restaurante
+        </h1>
+      </div>
+
       <Card className="mb-4">
         <p className="text-sm text-ink">{place?.nombre}</p>
         <p className="text-xs text-ink-soft">{place?.direccion}</p>
@@ -85,6 +75,9 @@ export default function AjustesPage() {
             ★ {place.rating} · {place.total?.toLocaleString("es")} reseñas
           </p>
         ) : null}
+        <p className="mt-3 text-[11px] leading-5 text-ink-soft">
+          {copy.settings.lockedLine}
+        </p>
       </Card>
 
       <Link href="/informe/pdf">
@@ -94,24 +87,41 @@ export default function AjustesPage() {
       </Link>
 
       <div className="space-y-2">
-        {actions.map((a) => (
-          <Button
-            key={a.label}
-            variant={a.variant || "secondary"}
-            fullWidth
-            onClick={a.onClick}
-            disabled={a.disabled}
-          >
-            {a.label}
-          </Button>
-        ))}
+        <Button
+          variant="secondary"
+          fullWidth
+          onClick={regenerate}
+          disabled={loading}
+        >
+          {copy.settings.regenerate}
+        </Button>
+        <Button
+          variant="secondary"
+          fullWidth
+          onClick={refreshReviews}
+          disabled={refreshing}
+        >
+          {copy.settings.refreshReviews}
+        </Button>
+        <Button variant="danger" fullWidth onClick={logout}>
+          {copy.settings.logout}
+        </Button>
       </div>
+
+      {notice ? (
+        <p className="mt-4 rounded-xl bg-mustard/10 px-3 py-2 text-center text-sm text-ink">
+          {notice}
+        </p>
+      ) : null}
+
+      {showDevActions ? (
+        <p className="mt-6 text-center text-[10px] uppercase tracking-[0.2em] text-ink-soft/70">
+          Modo desarrollo · acciones de admin disponibles vía consola
+        </p>
+      ) : null}
 
       <p className="mt-8 text-center text-xs text-ink-soft">
         {copy.brand.footer}
-      </p>
-      <p className="mt-2 text-center text-[10px] text-ink-soft/80">
-        {placeholders.manualReviewPaste}
       </p>
     </PageShell>
   );

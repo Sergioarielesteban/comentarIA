@@ -1,55 +1,44 @@
-const OUTSCRAPER_API = "https://api.app.outscraper.com/maps/search-v3";
+import { getServerUser } from "@/lib/server/auth";
+import { ApiError, apiErrorResponse } from "@/lib/server/errors";
+import { searchPlaces } from "@/lib/server/outscraper";
+import { getUserRestaurant } from "@/lib/server/restaurant";
+import {
+  assertUsageAvailable,
+  incrementUsage,
+} from "@/lib/server/usage";
+
+export const runtime = "nodejs";
+export const maxDuration = 30;
 
 export async function GET(request: Request) {
-  const apiKey =
-    process.env.OUTSCRAPER_API_KEY || process.env.outscraper_api_key;
-  if (!apiKey) {
-    return Response.json(
-      { error: "Outscraper no configurado en el servidor." },
-      { status: 503 },
-    );
-  }
-
-  const { searchParams } = new URL(request.url);
-  const nombre = searchParams.get("nombre");
-  const ubicacion = searchParams.get("ubicacion");
-
-  if (!nombre) {
-    return Response.json({ error: "Falta el parámetro nombre" }, { status: 400 });
-  }
-
-  const query = ubicacion
-    ? `${nombre} ${ubicacion}`
-    : `${nombre} restaurante`;
-
   try {
-    const url = `${OUTSCRAPER_API}?query=${encodeURIComponent(query)}&language=es&limit=6&async=false`;
-    const r = await fetch(url, { headers: { "X-API-KEY": apiKey } });
-    const data = await r.json();
+    const user = await getServerUser();
 
-    if (!r.ok) {
-      return Response.json(
-        { error: (data as { message?: string })?.message || "Error de Outscraper" },
-        { status: r.status },
+    // Solo durante onboarding (sin restaurante vinculado).
+    const existing = await getUserRestaurant(user.id);
+    if (existing) {
+      throw new ApiError(
+        403,
+        "Tu cuenta ya tiene un restaurante vinculado.",
+        "already_locked",
       );
     }
 
-    const places = ((data as { data?: unknown[] })?.data?.[0] || []) as Record<
-      string,
-      unknown
-    >[];
+    const { searchParams } = new URL(request.url);
+    const nombre = (searchParams.get("nombre") ?? "").trim();
+    const ubicacion = (searchParams.get("ubicacion") ?? "").trim();
 
-    const results = places.map((p) => ({
-      place_id: p.place_id as string,
-      name: p.name as string,
-      formatted_address: (p.full_address || p.address) as string,
-      rating: p.rating as number | undefined,
-      user_ratings_total: p.reviews as number | undefined,
-    }));
+    if (nombre.length < 2 || nombre.length > 80) {
+      throw new ApiError(400, "Nombre inválido (2–80 caracteres).");
+    }
+    const ubicacionLimpia = ubicacion.slice(0, 80);
 
+    await assertUsageAvailable(user.id, "place_search");
+    await incrementUsage(user.id, "place_search");
+
+    const results = await searchPlaces(nombre, ubicacionLimpia || undefined);
     return Response.json({ results });
   } catch (err) {
-    const message = err instanceof Error ? err.message : "Error desconocido";
-    return Response.json({ error: `Error al buscar: ${message}` }, { status: 502 });
+    return apiErrorResponse(err);
   }
 }

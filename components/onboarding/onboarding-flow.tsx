@@ -9,19 +9,21 @@ import { Input } from "@/components/ui/input";
 import { Spinner } from "@/components/ui/spinner";
 import { ErrorState } from "@/components/ui/error-state";
 import { copy } from "@/lib/copy/es";
-import type { Place, PlaceSearchResult, Resena } from "@/lib/types";
+import type { PlaceSearchResult } from "@/lib/types";
 
 type Step = "intro" | "search" | "select" | "loading";
 
 export function OnboardingFlow() {
   const router = useRouter();
-  const { persistRestaurant } = useApp();
+  const { refresh } = useApp();
   const [step, setStep] = useState<Step>("intro");
   const [nombre, setNombre] = useState("");
   const [ciudad, setCiudad] = useState("");
   const [results, setResults] = useState<PlaceSearchResult[]>([]);
   const [error, setError] = useState<string | null>(null);
-  const [status, setStatus] = useState<string>(copy.onboarding.loadingDiagnosis);
+  const [status, setStatus] = useState<string>(
+    copy.onboarding.loadingDiagnosis,
+  );
 
   async function searchPlaces() {
     setStep("search");
@@ -31,7 +33,7 @@ export function OnboardingFlow() {
     const res = await fetch(`/api/places/search?${params}`);
     const data = await res.json();
     if (!res.ok) {
-      setError(data.error || copy.errors.generic);
+      setError(data?.error?.message || copy.errors.generic);
       return;
     }
     setResults(data.results || []);
@@ -43,34 +45,24 @@ export function OnboardingFlow() {
     setStatus(copy.onboarding.loadingDiagnosis);
     setError(null);
 
-    const query = place.place_id || `${place.name} ${place.formatted_address}`;
-    const res = await fetch(
-      `/api/reviews?query=${encodeURIComponent(query)}&limit=200`,
-    );
+    const res = await fetch("/api/onboarding/restaurant", {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify({
+        place_id: place.place_id,
+        name: place.name,
+        address: place.formatted_address,
+      }),
+    });
     const data = await res.json();
     if (!res.ok) {
-      setError(data.error || copy.errors.generic);
-      setStep("select");
-      return;
-    }
-
-    const lugar: Place = {
-      place_id: place.place_id,
-      nombre: data.lugar?.nombre || place.name,
-      direccion: data.lugar?.direccion || place.formatted_address,
-      rating: data.lugar?.rating ?? place.rating,
-      total: data.lugar?.total ?? place.user_ratings_total,
-    };
-    const resenas: Resena[] = data.resenas || [];
-
-    if (!resenas.length) {
-      setError(copy.errors.noReviews);
+      setError(data?.error?.message || copy.errors.generic);
       setStep("select");
       return;
     }
 
     setStatus(copy.onboarding.savingCloud);
-    await persistRestaurant(lugar, resenas);
+    await refresh();
     router.replace("/insights");
     router.refresh();
   }
@@ -111,6 +103,7 @@ export function OnboardingFlow() {
               value={nombre}
               onChange={(e) => setNombre(e.target.value)}
               placeholder="Ej. Casa Pepe"
+              maxLength={80}
             />
           </label>
           <label className="block text-sm text-ink-soft">
@@ -120,9 +113,14 @@ export function OnboardingFlow() {
               value={ciudad}
               onChange={(e) => setCiudad(e.target.value)}
               placeholder="Ej. Madrid"
+              maxLength={80}
             />
           </label>
-          <Button fullWidth onClick={searchPlaces} disabled={!nombre.trim()}>
+          <Button
+            fullWidth
+            onClick={searchPlaces}
+            disabled={nombre.trim().length < 2}
+          >
             Buscar restaurante
           </Button>
         </>
@@ -131,6 +129,7 @@ export function OnboardingFlow() {
           <h2 className="font-display text-xl text-ink">
             {copy.onboarding.selectTitle}
           </h2>
+          <p className="text-xs text-ink-soft">{copy.onboarding.lockWarning}</p>
           <div className="space-y-2">
             {results.map((p) => (
               <button
@@ -146,8 +145,8 @@ export function OnboardingFlow() {
                   </p>
                   {p.rating ? (
                     <p className="mt-1 text-xs text-olive">
-                      ★ {p.rating} · {p.user_ratings_total?.toLocaleString("es")}{" "}
-                      reseñas
+                      ★ {p.rating} ·{" "}
+                      {p.user_ratings_total?.toLocaleString("es")} reseñas
                     </p>
                   ) : null}
                 </Card>
@@ -156,7 +155,9 @@ export function OnboardingFlow() {
           </div>
         </>
       )}
-      {error ? <ErrorState message={error} onRetry={() => setError(null)} /> : null}
+      {error ? (
+        <ErrorState message={error} onRetry={() => setError(null)} />
+      ) : null}
     </div>
   );
 }

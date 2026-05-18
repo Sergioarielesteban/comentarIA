@@ -8,7 +8,7 @@ export function Card({
   return (
     <div
       className={[
-        "rounded-2xl border border-border bg-card p-4 shadow-[0_8px_24px_var(--shadow)]",
+        "rounded-2xl border border-border bg-card/82 p-4 shadow-[0_1px_12px_var(--shadow)]",
         className,
       ].join(" ")}
       {...props}

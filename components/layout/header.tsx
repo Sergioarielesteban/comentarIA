@@ -1,34 +1,65 @@
-import Link from "next/link";
-import { copy } from "@/lib/copy/es";
+"use client";
 
-export function Header({
-  title,
-  subtitle,
-  showBrand = true,
-}: {
-  title?: string;
-  subtitle?: string;
-  showBrand?: boolean;
-}) {
+import Link from "next/link";
+import { useApp } from "@/components/providers/app-provider";
+
+export function AppHeader() {
+  const { place } = useApp();
+
   return (
-    <header className="border-b border-border bg-cream/80 px-4 py-4 backdrop-blur-sm">
-      {showBrand && !title ? (
-        <Link href="/insights" className="block">
-          <p className="font-display text-2xl font-semibold tracking-tight text-ink">
-            {copy.brand.name}
+    <header className="sticky top-0 z-40 border-b border-border bg-cream/86 px-4 py-3 backdrop-blur-xl sm:px-6">
+      <div className="mx-auto flex max-w-6xl items-center justify-between gap-4">
+        <Link href="/insights" className="min-w-0">
+          <p className="font-display text-[2rem] font-semibold leading-none tracking-normal text-ink">
+            Comentar<span className="text-terracotta">IA</span>
           </p>
-          <p className="text-xs text-ink-soft">{copy.brand.tagline}</p>
+          <div className="mt-1 flex min-w-0 items-center gap-2 text-xs text-ink-soft">
+            <span className="truncate">
+              {place?.nombre ?? "Sin restaurante vinculado"}
+            </span>
+            <span
+              className={`h-1.5 w-1.5 shrink-0 rounded-full ${place ? "bg-olive" : "bg-terracotta"}`}
+              title={place ? "Restaurante vinculado" : "Completa el onboarding"}
+            />
+            <span className="hidden shrink-0 sm:inline">
+              {place ? "Restaurante conectado" : "Pendiente de vincular"}
+            </span>
+          </div>
         </Link>
-      ) : (
-        <div>
-          <p className="font-display text-xl font-semibold text-ink">
-            {title}
-          </p>
-          {subtitle ? (
-            <p className="mt-0.5 text-xs text-ink-soft">{subtitle}</p>
-          ) : null}
+        <div className="flex items-center gap-2">
+          <button
+            type="button"
+            aria-label="Notificaciones"
+            className="grid h-10 w-10 place-items-center rounded-full border border-border bg-card/60 text-ink-soft transition hover:border-terracotta/30 hover:text-ink"
+          >
+            <BellIcon />
+          </button>
+          <Link
+            href="/chat"
+            className="rounded-full bg-ink px-4 py-2.5 text-sm font-semibold text-cream transition hover:bg-terracotta"
+          >
+            Consultor IA
+          </Link>
         </div>
-      )}
+      </div>
     </header>
+  );
+}
+
+function BellIcon() {
+  return (
+    <svg
+      aria-hidden="true"
+      className="h-4 w-4"
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="1.7"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+    >
+      <path d="M18 8a6 6 0 0 0-12 0c0 7-3 7-3 9h18c0-2-3-2-3-9" />
+      <path d="M13.73 21a2 2 0 0 1-3.46 0" />
+    </svg>
   );
 }

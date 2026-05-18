@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect } from "react";
+import { useEffect, useRef } from "react";
 import { PageShell } from "@/components/layout/page-shell";
 import { useApp } from "@/components/providers/app-provider";
 import { useAnalysisRunner } from "@/hooks/use-analysis-runner";
@@ -13,16 +13,16 @@ import {
   etiquetaSalud,
 } from "@/lib/analysis/reputation-score";
 import { copy } from "@/lib/copy/es";
-import { placeholders } from "@/lib/placeholders";
 
 export default function InsightsPage() {
   const { place, analysis, loading: appLoading } = useApp();
   const { run, loading, error } = useAnalysisRunner();
+  const triggeredRef = useRef(false);
 
-  // Esperar sync desde Supabase (móvil/otro dispositivo) antes de analizar
   useEffect(() => {
-    if (appLoading || !place || analysis) return;
-    run();
+    if (appLoading || !place || analysis || triggeredRef.current) return;
+    triggeredRef.current = true;
+    void run(false);
   }, [appLoading, place, analysis, run]);
 
   const score = place ? calcularScoreReputacion(place, analysis) : 0;
@@ -35,10 +35,7 @@ export default function InsightsPage() {
         : copy.insights.urgent;
 
   return (
-    <PageShell
-      title={copy.insights.title}
-      subtitle={place?.nombre}
-    >
+    <PageShell>
       {loading && !analysis ? (
         <Spinner label={copy.insights.analyzing} />
       ) : error ? (
@@ -64,9 +61,6 @@ export default function InsightsPage() {
             >
               {healthLabel}
             </Badge>
-            <p className="mt-3 text-xs text-ink-soft italic">
-              {placeholders.weeklyTrendChart}
-            </p>
           </Card>
 
           <section>

@@ -87,7 +87,7 @@ export default function InformePdfPage() {
         </div>
       ) : (
         <p className="mt-8 text-neutral-600">
-          No hay análisis disponible. Genera uno desde Insights.
+          No hay análisis disponible. Genera uno desde Resumen.
         </p>
       )}
 

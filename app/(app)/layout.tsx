@@ -32,9 +32,11 @@ function AppGate({ children }: { children: React.ReactNode }) {
   const hideNav = pathname === "/onboarding" || pathname.startsWith("/informe");
 
   return (
-    <div className="mx-auto flex min-h-dvh max-w-lg flex-col bg-cream">
+    <div className="min-h-dvh bg-cream">
+      <div className="mx-auto flex min-h-dvh w-full flex-col">
       {children}
       {!hideNav ? <BottomNav /> : null}
+      </div>
     </div>
   );
 }

@@ -3,51 +3,34 @@
 import { FormEvent, useEffect, useRef, useState } from "react";
 import { PageShell } from "@/components/layout/page-shell";
 import { useApp } from "@/components/providers/app-provider";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { STORAGE_KEYS } from "@/lib/constants";
 import {
-  getChatCountToday,
-  incrementChatCount,
-  isChatLimitReached,
-} from "@/lib/chat/daily-limit";
+  ConsultantPromptChip,
+  PremiumSectionTitle,
+} from "@/components/premium/reputation-components";
 import { copy } from "@/lib/copy/es";
 import type { ChatMessage } from "@/lib/types";
 
-function loadHistory(): ChatMessage[] {
-  if (typeof window === "undefined") return [];
-  try {
-    const raw = localStorage.getItem(STORAGE_KEYS.chatHistory);
-    return raw ? (JSON.parse(raw) as ChatMessage[]) : [];
-  } catch {
-    return [];
-  }
-}
-
-function saveHistory(messages: ChatMessage[]) {
-  localStorage.setItem(STORAGE_KEYS.chatHistory, JSON.stringify(messages));
-}
+const MAX_INPUT_LENGTH = 1000;
+const HISTORY_SIZE = 20;
 
 export default function ChatPage() {
-  const { place, analysis } = useApp();
+  const { place } = useApp();
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [input, setInput] = useState("");
   const [loading, setLoading] = useState(false);
+  const [limitReached, setLimitReached] = useState(false);
   const bottomRef = useRef<HTMLDivElement>(null);
-
-  useEffect(() => {
-    setMessages(loadHistory());
-  }, []);
 
   useEffect(() => {
     bottomRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [messages, loading]);
 
   async function send(text: string) {
-    if (!text.trim() || loading || isChatLimitReached()) return;
+    const clean = text.trim().slice(0, MAX_INPUT_LENGTH);
+    if (!clean || loading || limitReached) return;
 
-    const userMsg: ChatMessage = { role: "user", content: text.trim() };
-    const next = [...messages, userMsg];
+    const userMsg: ChatMessage = { role: "user", content: clean };
+    const next = [...messages, userMsg].slice(-HISTORY_SIZE);
     setMessages(next);
     setInput("");
     setLoading(true);
@@ -55,27 +38,26 @@ export default function ChatPage() {
     const res = await fetch("/api/chat", {
       method: "POST",
       headers: { "content-type": "application/json" },
-      body: JSON.stringify({
-        place,
-        analysis,
-        messages: next,
-      }),
+      body: JSON.stringify({ messages: next }),
     });
 
     setLoading(false);
-    incrementChatCount();
+
+    if (res.status === 429) {
+      setLimitReached(true);
+      setMessages([
+        ...next,
+        { role: "assistant", content: copy.chat.limitReached },
+      ]);
+      return;
+    }
 
     if (!res.ok) {
       const err = await res.json().catch(() => ({}));
-      const assistant: ChatMessage = {
-        role: "assistant",
-        content:
-          (err as { error?: { message?: string } })?.error?.message ||
-          copy.errors.generic,
-      };
-      const updated = [...next, assistant];
-      setMessages(updated);
-      saveHistory(updated);
+      const msg =
+        (err as { error?: { message?: string } })?.error?.message ||
+        copy.errors.generic;
+      setMessages([...next, { role: "assistant", content: msg }]);
       return;
     }
 
@@ -83,10 +65,7 @@ export default function ChatPage() {
     const reply =
       (data as { content?: { text?: string }[] })?.content?.[0]?.text ||
       "No pude generar respuesta.";
-    const assistant: ChatMessage = { role: "assistant", content: reply };
-    const updated = [...next, assistant];
-    setMessages(updated);
-    saveHistory(updated);
+    setMessages([...next, { role: "assistant", content: reply }]);
   }
 
   function onSubmit(e: FormEvent) {
@@ -94,64 +73,106 @@ export default function ChatPage() {
     send(input);
   }
 
-  const limitReached = isChatLimitReached();
-
   return (
-    <PageShell title={copy.chat.title} subtitle={place?.nombre}>
-      <div className="mb-3 flex flex-wrap gap-2">
-        {copy.chat.suggestions.map((s) => (
-          <button
-            key={s}
-            type="button"
-            onClick={() => send(s)}
-            className="rounded-full border border-border bg-card px-3 py-1 text-xs text-ink-soft hover:border-terracotta/40"
-          >
-            {s}
-          </button>
-        ))}
-      </div>
-
-      <div className="min-h-[50vh] space-y-3">
-        {messages.map((m, i) => (
-          <div
-            key={`${m.role}-${i}`}
-            className={`flex ${m.role === "user" ? "justify-end" : "justify-start"}`}
-          >
-            <div
-              className={[
-                "max-w-[85%] rounded-2xl px-4 py-2.5 text-sm leading-relaxed",
-                m.role === "user"
-                  ? "bg-terracotta text-white"
-                  : "border border-border bg-card text-ink",
-              ].join(" ")}
-            >
-              {m.content}
+    <PageShell>
+      <div className="grid gap-8 lg:grid-cols-[.78fr_1.22fr]">
+        <aside className="space-y-6">
+          <PremiumSectionTitle
+            eyebrow="Consultor IA"
+            title="Habla con tu consultor de reputación"
+            body={`Preguntas con contexto real de ${place?.nombre || "tu restaurante"} y sus reseñas.`}
+          />
+          <div className="space-y-3">
+            <p className="font-mono text-[10px] uppercase tracking-[0.22em] text-ink-soft">
+              Preguntas rápidas
+            </p>
+            <div className="flex flex-wrap gap-2">
+              {copy.chat.suggestions.map((s) => (
+                <ConsultantPromptChip key={s} onClick={() => send(s)}>
+                  {s}
+                </ConsultantPromptChip>
+              ))}
             </div>
           </div>
-        ))}
-        {loading ? (
-          <p className="text-sm text-ink-soft">Consultor pensando…</p>
-        ) : null}
-        <div ref={bottomRef} />
+          <div className="rounded-[24px] border border-border bg-card/70 p-5">
+            <p className="font-display text-2xl font-semibold leading-none text-ink">
+              Sesión segura
+            </p>
+            <p className="mt-3 text-sm leading-6 text-ink-soft">
+              {copy.chat.serverLimitNotice}
+            </p>
+          </div>
+        </aside>
+
+        <section className="rounded-[28px] border border-border bg-card/78 p-4 sm:p-6">
+          <div className="min-h-[58vh] space-y-4">
+            {!messages.length ? (
+              <div className="flex min-h-[42vh] flex-col justify-center rounded-[24px] bg-cream-muted/35 p-6">
+                <p className="font-mono text-[10px] uppercase tracking-[0.22em] text-terracotta">
+                  Sesión preparada
+                </p>
+                <h2 className="mt-4 max-w-xl font-display text-4xl font-semibold leading-none text-ink">
+                  Empieza por el punto que más te inquieta esta semana.
+                </h2>
+                <p className="mt-4 max-w-xl text-sm leading-6 text-ink-soft">
+                  El consultor puede priorizar quejas, leer la carta desde la voz del cliente o convertir reseñas en decisiones concretas.
+                </p>
+              </div>
+            ) : null}
+            {messages.map((m, i) => (
+              <div
+                key={`${m.role}-${i}`}
+                className={`flex ${m.role === "user" ? "justify-end" : "justify-start"}`}
+              >
+                <div
+                  className={[
+                    "max-w-[88%] rounded-[22px] px-4 py-3 text-sm leading-6",
+                    m.role === "user"
+                      ? "bg-ink text-cream"
+                      : "border border-border bg-cream text-ink",
+                  ].join(" ")}
+                >
+                  {m.content}
+                </div>
+              </div>
+            ))}
+            {loading ? (
+              <p className="font-mono text-[10px] uppercase tracking-[0.22em] text-ink-soft">
+                Consultor pensando...
+              </p>
+            ) : null}
+            <div ref={bottomRef} />
+          </div>
+
+          {limitReached ? (
+            <p className="mb-3 text-center text-sm text-ink-soft">
+              {copy.chat.limitReached}
+            </p>
+          ) : null}
+
+          <form
+            onSubmit={onSubmit}
+            className="mt-5 flex items-center gap-2 rounded-full border border-border bg-cream px-4 py-2"
+          >
+            <input
+              value={input}
+              onChange={(e) => setInput(e.target.value.slice(0, MAX_INPUT_LENGTH))}
+              placeholder={copy.chat.placeholder}
+              disabled={limitReached || loading}
+              maxLength={MAX_INPUT_LENGTH}
+              className="min-w-0 flex-1 bg-transparent py-2 text-sm text-ink outline-none placeholder:text-ink-soft/70"
+            />
+            <button
+              type="submit"
+              disabled={limitReached || loading || !input.trim()}
+              aria-label="Enviar pregunta"
+              className="grid h-10 w-10 place-items-center rounded-full bg-terracotta text-white transition hover:bg-terracotta-dark disabled:opacity-45"
+            >
+              <span aria-hidden>→</span>
+            </button>
+          </form>
+        </section>
       </div>
-
-      {limitReached ? (
-        <p className="mb-3 text-center text-sm text-ink-soft">
-          {copy.chat.limitReached} ({getChatCountToday()}/30)
-        </p>
-      ) : null}
-
-      <form onSubmit={onSubmit} className="flex gap-2">
-        <Input
-          value={input}
-          onChange={(e) => setInput(e.target.value)}
-          placeholder={copy.chat.placeholder}
-          disabled={limitReached || loading}
-        />
-        <Button type="submit" disabled={limitReached || loading || !input.trim()}>
-          →
-        </Button>
-      </form>
     </PageShell>
   );
 }

@@ -3,7 +3,7 @@ import { OnboardingFlow } from "@/components/onboarding/onboarding-flow";
 
 export default function OnboardingPage() {
   return (
-    <PageShell title="Configurar restaurante">
+    <PageShell>
       <OnboardingFlow />
     </PageShell>
   );
