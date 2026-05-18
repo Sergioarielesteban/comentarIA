@@ -48,12 +48,13 @@ export function BottomNav() {
                   setPressedHref(item.href);
                 }}
                 onPointerUp={() => setPressedHref(null)}
+                onPointerLeave={() => setPressedHref(null)}
                 onPointerCancel={() => setPressedHref(null)}
                 onClick={() => {
                   if (!active) setPendingHref(item.href);
                 }}
                 className={[
-                  "group relative flex min-h-[58px] min-w-0 flex-col items-center justify-center gap-1 overflow-hidden rounded-[22px] px-1.5 py-2 text-[10px] font-semibold transition duration-200 ease-out",
+                  "group relative flex min-h-[58px] min-w-0 touch-manipulation select-none flex-col items-center justify-center gap-1 overflow-hidden rounded-[22px] px-1.5 py-2 text-[10px] font-semibold transition duration-200 ease-out",
                   "focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-terracotta",
                   visuallyActive
                     ? "bg-cream text-terracotta shadow-[0_8px_22px_rgba(196,83,31,.12)]"
