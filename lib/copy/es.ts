@@ -102,17 +102,68 @@ export const copy = {
   },
   chat: {
     title: "Consultor IA",
-    placeholder: "Pregunta sobre tus reseñas…",
+    placeholder: "Pregunta sobre tu reputación…",
     limitReached:
       "Has alcanzado el límite diario de consultas. Vuelve mañana o mejora tu plan.",
     serverLimitNotice:
       "Tus conversaciones se procesan con tu restaurante real y un límite diario controlado en servidor.",
     suggestions: [
-      "¿Cuál es mi mayor punto débil esta semana?",
-      "¿Qué dicen sobre mi carta?",
-      "¿Cómo puedo mejorar el servicio?",
+      "¿Cuál es mi mayor riesgo ahora?",
+      "¿Qué producto debería potenciar?",
       "¿Qué me diferencia de la competencia?",
+      "¿Qué debería mejorar antes del fin de semana?",
+      "¿Qué opinan las familias con niños?",
     ],
+  },
+  summary: {
+    greeting: "Buenos días",
+    subtitle: "Aquí tienes el resumen de la reputación de",
+    lastUpdate: "Última actualización",
+    healthScore: "Salud reputacional",
+    weeklyPlan: "Qué hacer esta semana",
+    weeklyBriefing: "Briefing semanal IA",
+    activeAlerts: "Alertas activas",
+    viewPlan: "Ver plan operativo",
+    listenBriefing: "Escuchar briefing",
+    viewAlerts: "Ver alertas",
+    reputationCenter: "Centro de reputación",
+    starProducts: "Productos estrella",
+    mirrorReport: "Informe espejo",
+    evolution: "Evolución reputacional",
+    competition: "Comparativa con competencia",
+    consultant: "Consultor IA",
+    syncReviews: "Sincronizar reseñas",
+    noAnalysis: "Genera un análisis para ver tu resumen ejecutivo.",
+  },
+  weeklyPlan: {
+    title: "Qué hacer esta semana",
+    subtitle: "Plan operativo priorizado a partir de tus reseñas reales.",
+  },
+  replies: {
+    title: "Respuestas",
+    subtitle: "Gestiona borradores y respuestas aprobadas antes de publicar.",
+    empty: "No hay borradores pendientes. Responde reseñas desde el centro de reputación.",
+  },
+  brandVoice: {
+    title: "Voz del restaurante",
+    subtitle: "Perfil de tono que usa la IA al redactar respuestas.",
+    edit: "Editar perfil de voz",
+    empty: "Conecta Google Business para detectar tu estilo de respuesta.",
+    detected: "Estilo detectado",
+  },
+  evolution: {
+    title: "Evolución reputacional",
+    subtitle: "Cómo evolucionan puntuación, volumen y sentimiento.",
+    todoNote: "Histórico real pendiente — serie estimada desde el análisis actual.",
+  },
+  competition: {
+    title: "Comparativa con competencia",
+    empty: "Aún no hay competidores conectados.",
+    analyze: "Analizar competencia",
+    service: "Rapidez del servicio",
+    food: "Calidad de la comida",
+    value: "Relación calidad-precio",
+    vsMarket: "vs media competencia",
   },
   settings: {
     title: "Ajustes",
@@ -141,12 +192,48 @@ export const copy = {
       "JPG, PNG o WebP · máximo 4 MB. Se verá en tu resumen y en Ajustes.",
     coverUploadSuccess: "Imagen actualizada correctamente.",
   },
+  reputation: {
+    title: "Centro de reputación",
+    subtitle: "Reseñas oficiales de Google. Tú apruebas cada respuesta.",
+    connectHint:
+      "Conecta tu perfil de Google Business para importar reseñas y responder con la API oficial.",
+    connectBody:
+      "Autoriza con tu cuenta de Google. Solo verás los locales donde eres propietario o gestor.",
+    pickLocation: "Elige el restaurante que quieres gestionar con ComentarIA.",
+    lockWarning:
+      "Al vincular un local, quedará asociado a tu cuenta. Para cambiarlo, contacta con soporte.",
+    alreadyLinked: "Este restaurante está vinculado a tu cuenta.",
+    brandVoiceTitle: "Voz del restaurante",
+    brandVoiceBody:
+      "ComentarIA adapta el tono de tus respuestas a tu estilo.",
+    errors: {
+      noLocations:
+        "No encontramos locales asociados a esta cuenta de Google.",
+      denied: "No se completó la autorización con Google.",
+      linkFailed: "No se pudo vincular el restaurante.",
+      notConfigured:
+        "La conexión con Google Business aún no está activa en este entorno. El equipo debe configurar las variables de servidor.",
+    },
+  },
   nav: {
+    summary: "Resumen",
+    reputationCenter: "Centro de reputación",
+    resenas: "Reseñas",
+    replies: "Respuestas",
+    mirror: "Informe espejo",
+    weeklyPlan: "Qué hacer esta semana",
+    briefing: "Briefing",
+    consultant: "Consultor",
+    competition: "Competencia",
+    evolution: "Evolución",
+    brandVoice: "Voz del restaurante",
+    settings: "Ajustes",
+    more: "Más",
+    /** @deprecated usar summary */
     insights: "Resumen",
-    espejo: "Espejo",
+    espejo: "Informe espejo",
     audio: "Briefing",
     chat: "Consultor",
-    settings: "Ajustes",
   },
   errors: {
     generic: "Algo ha fallado. Inténtalo de nuevo.",

@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { useApp } from "@/components/providers/app-provider";
@@ -91,7 +92,13 @@ export function OnboardingFlow() {
             </li>
           ))}
         </ul>
-        <Button fullWidth onClick={() => setStep("search")}>
+        <Link
+          href="/conectar-google"
+          className="flex w-full items-center justify-center rounded-full bg-terracotta px-5 py-3.5 text-sm font-semibold text-white transition hover:bg-terracotta-dark"
+        >
+          Conectar Google Business
+        </Link>
+        <Button fullWidth variant="secondary" onClick={() => setStep("search")}>
           {copy.onboarding.cta}
         </Button>
       </div>

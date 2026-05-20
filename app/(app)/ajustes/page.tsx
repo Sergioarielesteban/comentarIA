@@ -161,6 +161,26 @@ export default function AjustesPage() {
           </Button>
         </SettingsSection>
 
+        <SettingsSection title={copy.reputation.brandVoiceTitle}>
+          <Card>
+            <p className="text-sm leading-6 text-ink-soft">
+              {copy.reputation.brandVoiceBody}
+            </p>
+            <Link
+              href="/voz"
+              className="mt-4 inline-flex text-sm font-semibold text-terracotta"
+            >
+              {copy.brandVoice.edit} →
+            </Link>
+            <Link
+              href="/centro"
+              className="mt-2 block text-sm font-semibold text-ink"
+            >
+              Centro de reputación →
+            </Link>
+          </Card>
+        </SettingsSection>
+
         <SettingsSection title={copy.settings.sectionRestaurant}>
           <UploadRestaurantCover />
           <Card>

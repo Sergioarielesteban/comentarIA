@@ -4,6 +4,7 @@ import { useEffect } from "react";
 import { usePathname, useRouter } from "next/navigation";
 import { AppProvider, useApp } from "@/components/providers/app-provider";
 import { BottomNav } from "@/components/layout/bottom-nav";
+import { SidebarNav } from "@/components/layout/sidebar-nav";
 import { Spinner } from "@/components/ui/spinner";
 
 function AppGate({ children }: { children: React.ReactNode }) {
@@ -33,9 +34,12 @@ function AppGate({ children }: { children: React.ReactNode }) {
 
   return (
     <div className="min-h-dvh bg-cream">
-      <div className="mx-auto flex min-h-dvh w-full flex-col">
-      {children}
-      {!hideNav ? <BottomNav /> : null}
+      <div className="mx-auto flex min-h-dvh w-full lg:max-w-[1400px]">
+        {!hideNav ? <SidebarNav /> : null}
+        <div className="flex min-h-dvh min-w-0 flex-1 flex-col">
+          {children}
+          {!hideNav ? <BottomNav /> : null}
+        </div>
       </div>
     </div>
   );

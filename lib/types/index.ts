@@ -88,3 +88,15 @@ export interface PlaceSearchResult {
   user_ratings_total?: number;
   cover_image_url?: string | null;
 }
+
+export type {
+  BrandVoiceProfile,
+  GoogleBusinessLocationOption,
+  ReplyDraftStatus,
+  ReviewAccountPublic,
+  ReviewFilter,
+  ReviewLocationRow,
+  ReviewPlatform,
+  ReviewReplyDraftRow,
+  ReviewRow,
+} from "@/lib/types/reviews-platform";

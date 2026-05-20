@@ -1,5 +1,8 @@
 import { createServerClient } from "@supabase/ssr";
 import { NextResponse, type NextRequest } from "next/server";
+import { PROTECTED_PREFIXES } from "@/lib/constants";
+
+const PROTECTED_APP_PREFIXES = PROTECTED_PREFIXES as readonly string[];
 
 function hasSupabaseEnv(): boolean {
   const url = process.env.NEXT_PUBLIC_SUPABASE_URL ?? "";
@@ -45,14 +48,9 @@ export async function updateSession(request: NextRequest) {
   } = await supabase.auth.getUser();
 
   const isAuthRoute = pathname.startsWith("/login");
-  const isAppRoute =
-    pathname.startsWith("/insights") ||
-    pathname.startsWith("/espejo") ||
-    pathname.startsWith("/audio") ||
-    pathname.startsWith("/chat") ||
-    pathname.startsWith("/ajustes") ||
-    pathname.startsWith("/onboarding") ||
-    pathname.startsWith("/informe");
+  const isAppRoute = PROTECTED_APP_PREFIXES.some((prefix) =>
+    pathname.startsWith(prefix),
+  );
 
   if (!user && isAppRoute) {
     const url = request.nextUrl.clone();
